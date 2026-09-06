@@ -8,8 +8,10 @@ const isSizeTest = args[0] === '--size-test'
 
 const version = packageData.version
 const getBuildName = (ver) => `chrome-mv3-prod-${ver}.zip`
+const getFirefoxBuildName = (ver) => `firefox-mv3-prod-${ver}.xpi`
 const getSizeTestName = (ver) => `size-test-${ver}.zip`
 const codeBuildOutDir = pr('../dist')
+const firefoxBuildOutDir = pr('../dist-firefox')
 const zipOutDir = pr('../build')
 
 if (!fs.existsSync(zipOutDir)) {
@@ -29,14 +31,55 @@ const getName = () => {
   }
 }
 
-async function main() {
+function archiveDirectory(sourceDir, outFile) {
   const archive = new ZipArchive({
     zlib: { level: 9 },
   })
-  archive.pipe(fs.createWriteStream(pr(zipOutDir, getName())))
-  archive.directory(codeBuildOutDir, false)
-  await archive.finalize()
+  const stream = fs.createWriteStream(outFile)
+  archive.pipe(stream)
+  archive.directory(sourceDir, false)
+  return archive.finalize().then(
+    () =>
+      new Promise((resolve, reject) => {
+        stream.on('close', resolve)
+        stream.on('error', reject)
+      }),
+  )
+}
+
+function prepareFirefoxDist() {
+  fs.removeSync(firefoxBuildOutDir)
+  fs.copySync(codeBuildOutDir, firefoxBuildOutDir)
+
+  const manifestPath = pr(firefoxBuildOutDir, 'manifest.json')
+  const manifest = fs.readJsonSync(manifestPath)
+
+  manifest.browser_specific_settings = {
+    gecko: {
+      id: 'dm-mini-player@maksvolkov7863.github.io',
+      strict_min_version: '128.0',
+    },
+  }
+
+  if (manifest.background?.service_worker) {
+    manifest.background = {
+      scripts: [manifest.background.service_worker],
+      type: manifest.background.type || 'module',
+    }
+  }
+
+  fs.writeJsonSync(manifestPath, manifest, { spaces: 2 })
+}
+
+async function main() {
+  await archiveDirectory(codeBuildOutDir, pr(zipOutDir, getName()))
+
   if (!isSizeTest) {
+    prepareFirefoxDist()
+    await archiveDirectory(
+      firefoxBuildOutDir,
+      pr(zipOutDir, getFirefoxBuildName(version)),
+    )
     await spawn('rm', [pr(zipOutDir, getSizeTestName('*')), '-f'])
   }
 }

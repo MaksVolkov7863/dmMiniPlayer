@@ -1,10 +1,19 @@
-name: Auto release
+name: Build extension
 
 on:
   push:
-    tags: 
+    branches: [main, master]
+    tags:
       - v*
+  pull_request:
   workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-extension-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -25,19 +34,38 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v4
         with:
-          node-version: 18
-          cache: 'pnpm'
-      - run: pnpm i
-      - run: node scripts/getChangeLog.mjs > CHANGELOG.txt
-      - name: Start build
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm i
+
+      - name: Build
         run: pnpm run build
-      - name: Archive dist
+
+      - name: Pack zip and xpi
         run: pnpm run archive
-      - name: Github release
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dmMiniPlayer-${{ github.sha }}
+          path: |
+            build/*.zip
+            build/*.xpi
+          if-no-files-found: error
+
+      - name: Write changelog
+        if: startsWith(github.ref, 'refs/tags/')
+        run: node scripts/getChangeLog.mjs > CHANGELOG.txt
+
+      - name: GitHub release
+        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           files: |
             build/*.zip
+            build/*.xpi
             metafile-*.json
           token: ${{ secrets.GITHUB_TOKEN }}
           body_path: CHANGELOG.txt

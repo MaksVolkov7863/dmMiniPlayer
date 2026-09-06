@@ -1,16 +1,7 @@
 import fs from 'fs-extra'
 import { manifest } from '../src/manifest'
 import { outDir } from './shared.tsup'
-import { pr } from './utils.mjs'
+import { getWebAccessibleResources, pr } from './utils.mjs'
 
-manifest.web_accessible_resources = [
-  {
-    resources: fs.readdirSync(pr(outDir)),
-    matches: ['<all_urls>'],
-  },
-  {
-    resources: ['assets/icon.png'],
-    matches: ['<all_urls>'],
-  },
-]
+manifest.web_accessible_resources = getWebAccessibleResources(pr(outDir))
 fs.writeJSONSync(pr(outDir, './manifest.json'), manifest, { spaces: 2 })

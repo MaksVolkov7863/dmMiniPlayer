@@ -4,7 +4,13 @@ import fs from 'fs-extra'
 import esbuildMetaUrl from '@chialab/esbuild-plugin-meta-url'
 import { manifest } from '../src/manifest'
 import packageJson from '../package.json'
-import { getChangeLog, getDefinesConfig, pr } from './utils.mjs'
+import {
+  copyExtensionStaticFiles,
+  getChangeLog,
+  getDefinesConfig,
+  getWebAccessibleResources,
+  pr,
+} from './utils.mjs'
 import { inlineImport } from './plugin/inlineImport'
 import { isDev, isTest } from './shared'
 
@@ -63,26 +69,8 @@ export const shareConfig = {
   },
   noExternal: [/(.*)/],
   async onSuccess() {
-    const locales = fs.readdirSync(pr('../src/locales-ext'))
-    locales.forEach((locale) => {
-      if (locale === '.translated.json') return
-      fs.copySync(
-        pr('../src/locales-ext', locale),
-        pr(outDir, `./_locales/${locale.replace('.json', '')}/messages.json`),
-      )
-    })
-    fs.copySync(pr('../assets'), pr(outDir, './assets'))
-
-    manifest.web_accessible_resources = [
-      {
-        resources: fs.readdirSync(pr(outDir)),
-        matches: ['<all_urls>'],
-      },
-      {
-        resources: ['assets/icon.png'],
-        matches: ['<all_urls>'],
-      },
-    ]
+    copyExtensionStaticFiles(outDir)
+    manifest.web_accessible_resources = getWebAccessibleResources(outDir)
 
     if (isDev) {
       manifest.permissions?.push('scripting')

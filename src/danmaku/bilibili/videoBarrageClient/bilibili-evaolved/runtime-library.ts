@@ -43,6 +43,6 @@ export class RuntimeLibrary<LibraryType> implements PromiseLike<LibraryType> {
 
 const host = ``
 export const protobufLibrary = new RuntimeLibrary<typeof protobufType>({
-  url: chrome.runtime.getURL('lib/protobuf.js'),
+  url: chrome.runtime.getURL('assets/lib/protobuf.js'),
   getModule: (window) => window.protobuf,
 })

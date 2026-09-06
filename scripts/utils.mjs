@@ -41,6 +41,47 @@ export function pr(...args) {
   return path.resolve(__dirname, ...args).replaceAll('\\', '/')
 }
 
+export function getWebAccessibleResources(outDir) {
+  const resources = []
+  for (const name of fs.readdirSync(outDir)) {
+    if (name === 'manifest.json') continue
+    const full = path.join(outDir, name)
+    if (fs.statSync(full).isDirectory()) {
+      resources.push(`${name}/*`, `${name}/**/*`)
+    } else {
+      resources.push(name)
+    }
+  }
+  return [
+    {
+      resources,
+      matches: ['<all_urls>'],
+    },
+    {
+      resources: ['assets/icon.png', 'assets/*', 'assets/lib/*', 'lib/*'],
+      matches: ['<all_urls>'],
+    },
+  ]
+}
+
+export function copyExtensionStaticFiles(outDir) {
+  const locales = fs.readdirSync(pr('../src/locales-ext'))
+  locales.forEach((locale) => {
+    if (locale === '.translated.json') return
+    fs.copySync(
+      pr('../src/locales-ext', locale),
+      pr(outDir, `./_locales/${locale.replace('.json', '')}/messages.json`),
+    )
+  })
+  fs.copySync(pr('../assets'), pr(outDir, './assets'))
+
+  const protobufSrc = pr(outDir, './assets/lib/protobuf.js')
+  if (fs.existsSync(protobufSrc)) {
+    fs.ensureDirSync(pr(outDir, './lib'))
+    fs.copySync(protobufSrc, pr(outDir, './lib/protobuf.js'))
+  }
+}
+
 export function getChangeLog(ver, lang) {
   const targetFile =
     lang === 'zh' ? pr('../docs/changeLog-zh.md') : pr('../docs/changeLog.md')

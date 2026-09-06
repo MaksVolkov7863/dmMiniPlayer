@@ -72,6 +72,25 @@ function prepareFirefoxDist() {
 }
 
 async function main() {
+  fs.writeFileSync(
+    pr(codeBuildOutDir, './INSTALL.txt'),
+    [
+      'Chrome / Edge',
+      '1. Unzip this archive into its own folder.',
+      '2. Open chrome://extensions (or edge://extensions).',
+      '3. Enable Developer mode.',
+      '4. Click "Load unpacked" and select THIS folder (the one with manifest.json).',
+      '5. Do not load the .xpi file in Chrome.',
+      '',
+      'Chrome / Edge',
+      '1. Распакуйте архив в отдельную папку.',
+      '2. Откройте chrome://extensions (или edge://extensions).',
+      '3. Включите «Режим разработчика».',
+      '4. «Загрузить распакованное расширение» и выберите ЭТУ папку (где лежит manifest.json).',
+      '5. Не загружайте файл .xpi в Chrome — он только для Firefox.',
+      '',
+    ].join('\n'),
+  )
   await archiveDirectory(codeBuildOutDir, pr(zipOutDir, getName()))
 
   if (!isSizeTest) {

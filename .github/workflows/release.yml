@@ -46,13 +46,20 @@ jobs:
       - name: Pack zip and xpi
         run: pnpm run archive
 
-      - name: Upload build artifacts
+      - name: Upload zipped packages
         uses: actions/upload-artifact@v4
         with:
-          name: dmMiniPlayer-${{ github.sha }}
+          name: dmMiniPlayer-packages-${{ github.sha }}
           path: |
             build/*.zip
             build/*.xpi
+          if-no-files-found: error
+
+      - name: Upload unpacked Chrome extension
+        uses: actions/upload-artifact@v4
+        with:
+          name: chrome-unpacked-load-this-folder
+          path: dist
           if-no-files-found: error
 
       - name: Write changelog

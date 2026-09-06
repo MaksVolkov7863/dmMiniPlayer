@@ -1,3 +1,7 @@
+## v0.6.63
+1. Added a complete Russian UI translation, including settings panel labels
+2. GitHub Actions now builds Chrome `.zip` and Firefox `.xpi` packages
+
 ## v0.6.62
 1. Fixed an error when loading custom danmaku
 2. Improved the extension global shortcut hide/show behavior so the picture-in-picture window can be fully hidden
